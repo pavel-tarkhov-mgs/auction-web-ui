@@ -1,0 +1,252 @@
+syntax = "proto3";
+
+option csharp_namespace = "Inventory.GrpcServices";
+
+package inventory;
+
+// @exclude DTOs
+enum OperationDto
+{
+    OPERATION_DTO_ADD_BASE = 0;
+    OPERATION_DTO_MULTIPLY_ADDITIVE = 1;
+    OPERATION_DTO_DIVIDE_ADDITIVE = 2;
+    OPERATION_DTO_OVERRIDE = 3;
+    OPERATION_DTO_MULTIPLY_COMPOUND = 4;
+    OPERATION_DTO_ADD_FINAL = 5;
+};
+
+message ItemTemplateDto
+{
+    // Template id
+    string id = 1;
+    // Item type (GameTag)
+    string type = 2;
+    // Max stack size
+    int32 max_stack_size = 3;
+    // Item width
+    int32 width = 4;
+    // Item height
+    int32 height = 5;
+    // If item should be removed from inventory if count is 0
+    bool remove_if_zero = 6;
+    // Grid information, null if item does not have grid
+    ItemGridDto grid = 7;
+    // Slot information, empty if item does not have slots
+    repeated ItemSlotDto slots = 8;
+    // Heap information, null if item does not have heap
+    ItemHeapDto heap = 9;
+    // Item price (might contain multiple required items)
+    ItemPriceDto base_price = 10;
+    // Item recipe id
+    string recipe_id = 11;
+    // Item class name
+    string class_path = 12;
+    // Additional metadata
+    map<string, string> metadata = 13;
+    // List of item type tags
+    repeated string metatags = 14;
+    // List of attribute sets
+    repeated string attribute_sets = 15;
+    // Level-dependent information. 0-based
+    repeated ItemTemplateLevelDto levels = 16;
+    // UI info for level
+    repeated ItemTemplateLevelUiInfoDto ui_info_levels = 17;
+    // Possible locations of the item: mobs, zone, bioms
+    repeated string drop_sources = 18;
+}
+
+message ItemTemplateLevelUiInfoDto
+{
+    // Item level
+    int32 level = 1;
+    // UI info for specified level
+    ItemUiInfoDto ui_info = 2;
+}
+
+message ItemUiInfoDto
+{
+    // Short display name
+    string short_display_name = 2;
+    // Full display name
+    string full_display_name = 3;
+    // Description
+    string description = 4;
+    // Icons, key -> icon tag, value - icon path
+    map<string, string> icons = 5;
+}
+
+message ItemSlotDto
+{
+    // Slot number
+    int32 slot_number = 1;
+    // Default item template id that will be placed in slot on creation
+    string default_item_template_id = 2;
+    // Slot name
+    string slot_name = 3;
+    // Item requirements
+    TagRequirementsDto type_requirements = 4;
+}
+
+message ItemGridDto
+{
+    // Grid width
+    int32 width = 1;
+    // Grid height
+    int32 height = 2;
+    // Grid max total weight
+    float max_total_weight = 3;
+    // Item requirements
+    TagRequirementsDto type_requirements = 4;
+}
+
+message ItemAttributeDto
+{
+    // Attribute name
+    string name = 1;
+    // Attribute value
+    float value = 2;
+    // Attribute operation
+    OperationDto operation = 3;
+}
+
+message ItemPriceDto
+{
+    // Items to pay with
+    repeated PaymentItemDto items = 1;
+}
+
+message PaymentItemDto
+{
+    // Item template id
+    string item_template_id = 1;
+    // Required count of items
+    int32 count = 2;
+}
+
+message ItemTemplateLevelDto
+{
+    // Item attributes
+    repeated ItemAttributeDto attributes = 1;
+    // List of gameplay effects
+    repeated string gameplay_effects = 2;
+    // List of abilities
+    repeated string abilities = 3;
+}
+
+message ItemDto
+{
+    // Item id
+    string id = 1;
+    // Item template id
+    string item_template_id = 2;
+    // Owner id
+    string user_id = 3;
+    // Count
+    int32 count = 4;
+    // Item's storage
+    ItemStorageDto storage = 5;
+    // Item level
+    int32 level = 6;
+    // Item attributes
+    repeated ItemAttributeDto attributes = 7;
+    // Additional metadata
+    map<string, string> metadata = 8;
+    // Items that were used as a source for this item
+    repeated SourceItemDto source_items = 9;
+    // Item rarity
+    string rarity = 10;
+    // List of gameplay effects
+    repeated string gameplay_effects = 11;
+}
+
+message ItemPrefabDto
+{
+    // Prefab id
+    string id = 1;
+    // Items prefab elements
+    repeated ItemPrefabElementDto elements = 2;
+}
+
+message ItemPrefabElementDto
+{
+    // Item id
+    string id = 1;
+    // Item template id
+    string item_template_id = 2;
+    // Item level
+    int32 level = 3;
+    // Item count
+    int32 count = 4;
+    // Item's storage
+    ItemStorageDto storage = 5;
+    // Item attributes
+    repeated ItemAttributeDto attributes = 6;
+    // Additional metadata
+    map<string, string> metadata = 7;
+    // Item rarity
+    string rarity = 8;
+    // List of gameplay effects
+    repeated string gameplay_effects = 9;
+}
+
+enum StorageTypeDto
+{
+    STORAGE_TYPE_DTO_NONE = 0;
+    STORAGE_TYPE_DTO_GRID = 1;
+    STORAGE_TYPE_DTO_SLOT = 2;
+    STORAGE_TYPE_DTO_HEAP = 3;
+}
+
+message ItemStorageDto
+{
+    // Storage item id
+    string storage_id = 1;
+    // Storage type
+    StorageTypeDto storage_type = 2;
+    // Index in storage
+    int32 position = 3;
+}
+
+message ItemListDto
+{
+    // Items
+    repeated ItemDto items = 1;
+}
+
+message ItemCountDto
+{
+    // Item id
+    string item_id = 1;
+    // Item's count
+    int32 count = 2;
+}
+
+message ItemHeapDto
+{
+    // Max capacity of heap
+    int32 max_capacity = 1;
+    // Item tag requirement
+    TagRequirementsDto type_requirements = 2;
+}
+
+message ItemSetDto
+{
+    // Item set id
+    string id = 1;
+    // List of items
+    repeated ItemDto items = 2;
+}
+
+message SourceItemDto
+{
+    string item_template_id = 1;
+    int32 level = 2;
+}
+
+message TagRequirementsDto
+{
+    // Which types or meta-tags should item have (Conjunction)
+    repeated string must_have_tags = 1;
+    // Which types and meta-tags are not allowed (Disjunction)
+    repeated string must_not_have_tags = 2;
+}

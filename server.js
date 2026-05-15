@@ -12,6 +12,9 @@ const protoLoader = require('@grpc/proto-loader');
 // ---------------------------------------------------------------------------
 const AUCTION_HOST   = process.env.AUCTION_GRPC_HOST   || 'localhost:5001';
 const INVENTORY_HOST = process.env.INVENTORY_GRPC_HOST || 'localhost:5002';
+const CURRENCY_TEMPLATE_ID = process.env.CURRENCY_TEMPLATE_ID || 'currency_coupons';
+const BACKPACK_TEMPLATE_ID = process.env.BACKPACK_TEMPLATE_ID || 'user_backpack';
+const RESOURCE_CONTAINER_TEMPLATE_IDS = new Set(['resources_container', 'container_resources']);
 const PORT           = parseInt(process.env.PORT || '3000', 10);
 const PROTO_DIR      = path.join(__dirname, 'proto');
 
@@ -186,6 +189,71 @@ app.get('/api/inventory/:userId/items', async (req, res) => {
   } catch (err) { grpcErrToHttp(err, res); }
 });
 
+// POST /api/inventory/:userId/currency/add
+// Body: { amount: 100 }
+app.post('/api/inventory/:userId/currency/add', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const amount = parseInt(req.body.amount, 10) || 100;
+
+    if (amount <= 0) {
+      return res.status(400).json({ error: 'amount must be greater than 0' });
+    }
+
+    // Find currency stack item id by template id for this user.
+    const listResult = await call(inventoryClient, 'ListItems', {
+      user_id: userId,
+      page: { page_number: 0, page_size: 1000 },
+      item_types: [],
+    });
+
+    const items = listResult.items || [];
+
+    const backpack = items.find(i => i.item_template_id === BACKPACK_TEMPLATE_ID);
+    const resourcesContainer = backpack
+      ? items.find(i =>
+        RESOURCE_CONTAINER_TEMPLATE_IDS.has(i.item_template_id) &&
+        i.storage &&
+        i.storage.storage_id === backpack.id
+      )
+      : null;
+
+    const currencyInBackpackResources = resourcesContainer
+      ? items.find(i =>
+        i.item_template_id === CURRENCY_TEMPLATE_ID &&
+        i.storage &&
+        i.storage.storage_id === resourcesContainer.id
+      )
+      : null;
+
+    // Fallback keeps backward compatibility for inventories where currency exists elsewhere.
+    const currencyItem = currencyInBackpackResources || items.find(i => i.item_template_id === CURRENCY_TEMPLATE_ID);
+
+    if (!currencyItem) {
+      return res.status(404).json({
+        error: `Currency item with template '${CURRENCY_TEMPLATE_ID}' not found for user ${userId}`,
+      });
+    }
+
+    await call(inventoryClient, 'AddItem', {
+      user_id: userId,
+      item: {
+        item_id: currencyItem.id,
+        count: amount,
+      },
+    });
+
+    res.json({
+      success: true,
+      user_id: userId,
+      item_id: currencyItem.id,
+      item_template_id: CURRENCY_TEMPLATE_ID,
+      storage_id: currencyItem.storage && currencyItem.storage.storage_id,
+      added: amount,
+    });
+  } catch (err) { grpcErrToHttp(err, res); }
+});
+
 // ---------------------------------------------------------------------------
 // Health check
 // ---------------------------------------------------------------------------
@@ -194,6 +262,7 @@ app.get('/api/health', (_req, res) => {
     status:        'ok',
     auction_host:  AUCTION_HOST,
     inventory_host: INVENTORY_HOST,
+    currency_template_id: CURRENCY_TEMPLATE_ID,
   });
 });
 

@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+option csharp_namespace = "CommonProto.Models";
+
+package cube.online.common;
+
+message PaginationParametersDto 
+{
+    int32 page_number = 1;
+    int32 page_size = 2;
+    string sort_by = 3;
+    //TODO: mark as optional
+    SortDirection sort_direction = 4;
+}
+
+enum SortDirection 
+{
+    SORT_DIRECTION_ASC = 0;
+    SORT_DIRECTION_DESC = 1;
+}
+
+message PageInfo 
+{
+    PaginationParametersDto parameters = 1;
+    int32 total = 2;
+}

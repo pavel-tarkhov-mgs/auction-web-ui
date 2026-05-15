@@ -1,0 +1,173 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "common.proto";
+import "inventory.dto.proto";
+
+option csharp_namespace = "Inventory.GrpcServices";
+
+package inventory;
+
+/**
+ * Inventory Templates API
+ */
+service InventoryTemplateService
+{
+    /**
+     * [Public] Get template by id
+     * Errors: WRONG_REQUEST_FORMAT, ITEM_TEMPLATE_NOT_FOUND
+     */
+    rpc GetTemplate(GetTemplateRequest) returns(GetTemplateReply);
+
+    /**
+     * [Public] Get templates by ids
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc GetTemplatesByIds(GetTemplatesByIdsRequest) returns(GetTemplatesByIdsReply);
+
+    /**
+     * [Public] Get templates by types
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc GetTemplatesByTypes(GetTemplatesByTypesRequest) returns(GetTemplatesByTypesReply);
+
+    /**
+     * [Public] Get item templates
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ListTemplates(ListTemplatesRequest) returns(ListTemplatesReply);
+
+    /**
+     * [Public] Add ot update item template
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SaveTemplate(SaveTemplateRequest) returns(SaveTemplateReply);
+
+    /**
+     * [Public] Remove item template
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc RemoveTemplate(RemoveTemplateRequest) returns(RemoveTemplateReply);
+
+    /**
+     * [Public] Import item templates. Update existing, add new, remove missing
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ImportTemplates(ImportTemplatesRequest) returns(ImportTemplatesReply);
+
+    /**
+     * [Admin] Import starter items set. Update existing, add new, remove missing
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ImportStarterItemSets(ImportStarterItemSetsRequest) returns (ImportStarterItemSetsReply);
+
+    /**
+     * [Public] Get starter items sets
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ListStarterItemSets(ListStarterItemSetsRequest) returns (ListStarterItemSetsReply);
+}
+
+// @exclude GetTemplate
+message GetTemplateRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Item template id
+    string item_template_id = 2;
+}
+message GetTemplateReply
+{
+    // Item template
+    ItemTemplateDto template = 1;
+}
+
+// @exclude GetTemplatesByIds
+message GetTemplatesByIdsRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Item templates ids
+    repeated string ids = 2;
+}
+message GetTemplatesByIdsReply
+{
+    // Key - template id, value - item template
+    map<string, ItemTemplateDto> templates = 1;
+}
+
+// @exclude GetTemplatesByTypes
+message GetTemplatesByTypesRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Item types
+    repeated string item_types = 2;
+}
+message GetTemplatesByTypesReply
+{
+    // Templates
+    repeated ItemTemplateDto templates = 1;
+}
+
+// @exclude ListTemplates
+message ListTemplatesRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Page information
+    cube.online.common.PaginationParametersDto page = 2;
+    // Search query
+    string search_query = 3;
+    // Filter
+    string filter = 4;
+}
+message ListTemplatesReply
+{
+    // Page information
+    cube.online.common.PageInfo page_info = 1;
+    // Item templates
+    repeated ItemTemplateDto templates = 2;
+}
+
+// @exclude SaveTemplate
+message SaveTemplateRequest
+{
+    // Item template
+    ItemTemplateDto template = 1;
+}
+message SaveTemplateReply {}
+
+// @exclude RemoveTemplate
+message RemoveTemplateRequest
+{
+    // Item template id
+    string item_template_id = 1;
+}
+message RemoveTemplateReply {}
+
+// @exclude ImportTemplates
+message ImportTemplatesRequest
+{
+    // Item templates
+    repeated ItemTemplateDto templates = 1;
+}
+message ImportTemplatesReply {}
+
+// @exclude ImportStarterItemSets
+message ImportStarterItemSetsRequest
+{
+    // Item sets
+    repeated ItemSetDto item_sets = 1;
+}
+message ImportStarterItemSetsReply {}
+
+// @exclude ListStarterItemSets
+message ListStarterItemSetsRequest {}
+message ListStarterItemSetsReply
+{
+    // Item sets
+    repeated ItemSetDto item_sets = 1;
+}
+

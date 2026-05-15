@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "common.proto";
+
+option csharp_namespace = "Auction.GrpcServices";
+
+package auction;
+
+service AuctionService 
+{
+    /** [Public] Get active lots with pagination and filters. 
+    * Errors: WRONG_REQUEST_FORMAT, INVALID_ARGUMENT
+    */
+    rpc GetLots (GetLotsRequest) returns (GetLotsResponse);
+    
+    /** [Public] Get active lots by owner. 
+    * Errors: WRONG_REQUEST_FORMAT 
+    */
+    rpc GetLotsByOwner (GetLotsByOwnerRequest) returns (GetLotsByOwnerResponse);
+    
+    /** [Public] Get a specific lot. 
+    * Errors:  WRONG_REQUEST_FORMAT
+    */
+    rpc GetLot (GetLotRequest) returns (GetLotResponse);
+    
+    /** [Public] Create a new lot. 
+    * Errors: WRONG_REQUEST_FORMAT, INVALID_ARGUMENT, ACTIVE_LOT_LIMIT_EXCEEDED, LOT_ALREADY_CREATED, NOT_FOUND 
+    */
+    rpc CreateLot (CreateLotRequest) returns (CreateLotResponse);
+    
+    /** [Public] Cancel a lot. 
+    * Errors: LOT_NOT_FOUND, INVALID_ARGUMENT 
+    */
+    rpc CancelLot (CancelLotRequest) returns (CancelLotResponse);
+    
+    /** [Public] Place a bid on a lot. 
+    * Errors: LOT_NOT_FOUND, INVALID_ARGUMENT, BID_OPERATION_NOT_ALLOWED 
+    */
+    rpc PlaceBid (PlaceBidRequest) returns (PlaceBidResponse);
+    
+    /** [Public] Buy a lot. 
+    * Errors: LOT_NOT_FOUND, INVALID_ARGUMENT, BUY_OPERATION_NOT_ALLOWED, FAILED_TO_TRANSFER 
+    */
+    rpc Buy (BuyRequest) returns (BuyResponse);
+}
+
+
+// @exclude GetLots
+message GetLotsRequest 
+{
+    // Page information
+    cube.online.common.PaginationParametersDto page = 1;
+    // Filters
+    repeated LotsFilterDto filters = 2;
+}
+
+message GetLotsResponse 
+{
+    cube.online.common.PageInfo page_info = 1;
+    repeated LotDto lots = 2;
+}
+
+// @exclude GetLotsByOwner
+message GetLotsByOwnerRequest 
+{
+    // Owner id
+    string owner_id = 1;
+}
+
+message GetLotsByOwnerResponse 
+{
+    repeated LotDto lots = 1;
+}
+
+// @exclude GetLot
+message GetLotRequest 
+{
+    // Lot id
+    string lot_id = 1;
+}
+
+message GetLotResponse 
+{
+    LotDto lot = 1;
+}
+
+// @exclude CreateLot
+message CreateLotRequest 
+{
+    // Owner id
+    string owner_id = 1;
+    // Item id
+    string item_id = 2;
+    // Buy mode enabled
+    bool buy_mode_enabled = 3;
+    // Bid mode enabled
+    bool bid_mode_enabled = 4;
+    // Start price
+    int32 start_price = 6;
+    // Buy price
+    int32 buy_price = 7;
+    // Duration in seconds
+    int32 duration = 8; // Duration in seconds
+}
+
+message CreateLotResponse 
+{
+    // Lot
+    LotDto lot = 1;
+}
+
+// @exclude CancelLot
+message CancelLotRequest 
+{
+    // Lot id
+    string lot_id = 1;
+    // Owner id
+    string owner_id = 2;
+}
+
+message CancelLotResponse {}
+
+// @exclude PlaceBid
+message PlaceBidRequest 
+{
+    // Lot id
+    string lot_id = 1;
+    // Bidder id
+    string bidder_id = 2;
+    // Bid amount
+    int32 bid_amount = 3;
+}
+
+message PlaceBidResponse {}
+
+// @exclude Buy
+message BuyRequest 
+{
+    // Lot id
+    string lot_id = 1;
+    // Buyer id
+    string buyer_id = 2;
+}
+
+message BuyResponse {}
+
+message LotDto 
+{
+    // Lot id
+    string lot_id = 1;
+    // Status
+    LotStatusDto status = 2;
+    // Owner id
+    string owner_id = 3;
+    // Item id
+    string item_id =4;
+    // Item full name
+    string item_full_name = 5;
+    // Item type
+    string item_type = 6;
+    // Buy mode enabled
+    bool buy_mode_enabled = 7;
+    // Bid mode enabled
+    bool bid_mode_enabled = 8;
+    // Start time
+    google.protobuf.Timestamp start_time = 9;
+    // End time
+    google.protobuf.Timestamp end_time = 10;
+    // Highest bid amount
+    int32 highest_bid_amount = 11;
+    // Buy price
+    int32 buy_price = 12;
+    // Start price
+    int32 start_price = 13;
+}
+
+message LotsFilterDto 
+{
+    // Lot field
+    string lot_field = 1;
+    // Field value
+    string field_value = 2;
+}
+
+enum LotStatusDto 
+{
+    LOT_STATUS_DTO_NONE = 0;
+    LOT_STATUS_DTO_CLOSED = 1;
+    LOT_STATUS_DTO_ACTIVE = 2;
+}

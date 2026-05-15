@@ -6,6 +6,7 @@
 let playerId = '';
 let currentPage = 0;
 let currentPageSize = 20;
+const expandedInventoryItems = new Set();
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -59,26 +60,65 @@ function findContainerId(items, templateId) {
   return container ? container.id : null;
 }
 
-function renderItemCard(item, clickable = false) {
+function renderItemCard(item, options = {}) {
+  const { clickable = false, hasChildren = false, expanded = false, childCount = 0 } = options;
   const div = document.createElement('div');
-  div.className = 'item-card' + (clickable ? ' item-clickable' : '');
+  div.className =
+    'item-card' +
+    ((clickable || hasChildren) ? ' item-clickable' : '') +
+    (hasChildren ? ' item-expandable' : '') +
+    (expanded ? ' item-expanded' : '');
   div.title = item.id;
-  if (clickable) div.dataset.itemId = item.id;
+  if (clickable || hasChildren) div.dataset.itemId = item.id;
 
   const name = item.item_template_id || item.id;
   const shortId = item.id ? item.id.split('-')[0] : '?';
   div.innerHTML = `
-    <div class="item-name">${escHtml(name)}</div>
+    <div class="item-name">
+      ${hasChildren ? `<span class="item-expand-icon">${expanded ? '▼' : '▶'}</span>` : ''}
+      ${escHtml(name)}
+    </div>
     <div class="item-meta">
       <span class="tag">id:${escHtml(shortId)}…</span>
       <span class="tag">×${item.count ?? 1}</span>
       ${item.level ? `<span class="tag">lv${item.level}</span>` : ''}
+      ${hasChildren ? `<span class="tag">contains:${childCount}</span>` : ''}
     </div>`;
   return div;
 }
 
 function escHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setMoneyLabel(value) {
+  const el = $('moneyValue');
+  if (!el) return;
+  el.textContent = String(value);
+}
+
+function getUserCurrencyInBackpack(items, backpackId) {
+  if (!backpackId) return 0;
+
+  const resourceContainerTemplateIds = new Set(['resources_container', 'container_resources']);
+  const currencyTemplateIds = new Set(['currency_coupons', 'currency_cupons']);
+
+  // Resource container should live in backpack and contain currency stacks.
+  const resourcesContainer = items.find(i =>
+    resourceContainerTemplateIds.has(i.item_template_id) &&
+    i.storage &&
+    i.storage.storage_id === backpackId
+  );
+
+  if (!resourcesContainer) return 0;
+
+  const moneyItems = items.filter(i =>
+    i.storage &&
+    i.storage.storage_id === resourcesContainer.id &&
+    currencyTemplateIds.has(i.item_template_id)
+  );
+
+  return moneyItems.reduce((sum, i) => sum + (parseInt(i.count, 10) || 0), 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -122,9 +162,12 @@ async function loadInventoryPanels() {
       ? items.filter(i => i.storage && i.storage.storage_id === auctionStoreId)
       : [];
 
-    renderItemList(invEl,     backpackItems,     true);
-    renderItemList(wareEl,    storageItems,      true);
-    renderItemList(auctionEl, auctionStoreItems, false);
+    const money = getUserCurrencyInBackpack(items, backpackId);
+    setMoneyLabel(money);
+
+    renderItemList(invEl,     backpackItems,     true,  items);
+    renderItemList(wareEl,    storageItems,      true,  items);
+    renderItemList(auctionEl, auctionStoreItems, false, items);
 
     if (!backpackId)     invEl.innerHTML     = '<div class="placeholder">Backpack container (user_backpack) not found.</div>';
     if (!storageId)      wareEl.innerHTML    = '<div class="placeholder">Storage container (user_storage) not found.</div>';
@@ -136,25 +179,73 @@ async function loadInventoryPanels() {
     invEl.innerHTML     = `<div class="error-msg">${escHtml(e.message)}</div>`;
     wareEl.innerHTML    = `<div class="error-msg">${escHtml(e.message)}</div>`;
     auctionEl.innerHTML = `<div class="error-msg">${escHtml(e.message)}</div>`;
+    setMoneyLabel('ERR');
   }
 }
 
-function renderItemList(container, items, clickable) {
+function renderItemList(container, items, clickable, allItems = items) {
   container.innerHTML = '';
   if (!items.length) {
     container.innerHTML = '<div class="placeholder">No items.</div>';
     return;
   }
-  items.forEach(item => {
-    const card = renderItemCard(item, clickable);
-    if (clickable) {
-      card.addEventListener('click', () => {
+
+  const childrenByParent = new Map();
+  allItems.forEach(item => {
+    const parentId = item.storage && item.storage.storage_id;
+    if (!parentId) return;
+    if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+    childrenByParent.get(parentId).push(item);
+  });
+
+  const fragment = document.createDocumentFragment();
+  items.forEach(item => renderItemNode(fragment, item, 0, new Set()));
+  container.appendChild(fragment);
+
+  function renderItemNode(target, item, depth, ancestors) {
+    const childItems = childrenByParent.get(item.id) || [];
+    const hasChildren = childItems.length > 0;
+    const expanded = hasChildren && expandedInventoryItems.has(item.id);
+
+    const card = renderItemCard(item, {
+      clickable,
+      hasChildren,
+      expanded,
+      childCount: childItems.length,
+    });
+
+    if (depth > 0) card.classList.add('item-nested');
+    card.style.marginLeft = `${depth * 14}px`;
+
+    card.addEventListener('click', () => {
+      if (clickable) {
         $('clItemId').value = item.id;
         $('clItemId').focus();
-      });
-    }
-    container.appendChild(card);
-  });
+      }
+
+      if (!hasChildren) return;
+
+      if (expandedInventoryItems.has(item.id)) {
+        expandedInventoryItems.delete(item.id);
+      } else {
+        expandedInventoryItems.add(item.id);
+      }
+
+      renderItemList(container, items, clickable, allItems);
+    });
+
+    target.appendChild(card);
+    if (!expanded) return;
+
+    const nextAncestors = new Set(ancestors);
+    nextAncestors.add(item.id);
+
+    childItems.forEach(child => {
+      // Guard against malformed cyclic graphs.
+      if (nextAncestors.has(child.id)) return;
+      renderItemNode(target, child, depth + 1, nextAncestors);
+    });
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -423,6 +514,32 @@ $('btnSetPlayer').addEventListener('click', () => applyPlayerId($('playerIdInput
 $('playerIdInput').addEventListener('keydown', e => { if (e.key === 'Enter') applyPlayerId($('playerIdInput').value); });
 
 // ---------------------------------------------------------------------------
+// Dev helper: add +100 currency
+// ---------------------------------------------------------------------------
+$('btnAddCurrency').addEventListener('click', async () => {
+  if (!playerId) {
+    alert('Set a Player ID first.');
+    return;
+  }
+
+  const btn = $('btnAddCurrency');
+  const statusEl = $('headerStatus');
+
+  btn.disabled = true;
+  try {
+    const r = await api('POST', `/api/inventory/${encodeURIComponent(playerId)}/currency/add`, { amount: 100 });
+    log('AddCurrency', r);
+    showMsg(statusEl, '+100 currency added');
+    await loadInventoryPanels();
+  } catch (e) {
+    log('AddCurrency ERROR', e.data || e.message);
+    showMsg(statusEl, e.message, true);
+  } finally {
+    btn.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------------------
 // Pagination
 // ---------------------------------------------------------------------------
 $('btnPrevPage').addEventListener('click', () => { if (currentPage > 0) { currentPage--; loadAllLots(); } });
@@ -457,6 +574,8 @@ $('btnClearLog').addEventListener('click', () => { $('responseLog').textContent 
 (function init() {
   const params   = new URLSearchParams(window.location.search);
   const urlPlayer = params.get('playerId') || '';
+
+  setMoneyLabel('—');
 
   checkHealth();
   loadAllLots(); // load lots even without player

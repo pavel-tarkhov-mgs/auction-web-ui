@@ -97,6 +97,23 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 .dot-ok  { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
 .dot-err { background: var(--danger);  box-shadow: 0 0 6px var(--danger);  }
 
+.money-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg2);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.money-pill strong {
+  color: var(--warning);
+  font-variant-numeric: tabular-nums;
+}
+
 /* ── Buttons ─────────────────────────────────────────────────────── */
 .btn {
   border: none;
@@ -172,6 +189,14 @@ input[type="text"]::placeholder { color: var(--text-dim); }
 }
 .item-clickable { cursor: pointer; transition: border-color .15s; }
 .item-clickable:hover { border-color: var(--accent); background: var(--bg3); }
+.item-expandable .item-name { display: flex; align-items: center; gap: 4px; }
+.item-expand-icon { color: var(--accent); width: 10px; display: inline-block; text-align: center; }
+.item-expanded { border-color: #3f68b2; }
+.item-nested {
+  border-left: 2px solid rgba(74, 140, 247, 0.35);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
 
 .item-name { font-size: 12px; color: var(--text); margin-bottom: 3px; }
 .item-meta { display: flex; flex-wrap: wrap; gap: 4px; }

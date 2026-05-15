@@ -1,0 +1,548 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/field_mask.proto";
+import "common.proto";
+import "inventory.dto.proto";
+
+option csharp_namespace = "Inventory.GrpcServices";
+
+package inventory;
+
+/**
+ * Inventory API
+ */
+service InventoryService
+{
+    /**
+     * [Private] Initialize user's inventory
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc InitUserInventory(InitUserInventoryRequest) returns (InitUserInventoryReply);
+
+    /**
+     * [Public] Get item by id
+     * Errors: WRONG_REQUEST_FORMAT, ITEM_NOT_FOUND
+     */
+    rpc GetItem(GetItemRequest) returns (GetItemReply);
+
+    /**
+     * [Public] Get items by ids
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc GetItemsByIds(GetItemsByIdsRequest) returns(GetItemsByIdsReply);
+
+    /**
+     * [Public] Get user items
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ListItems(ListItemsRequest) returns (ListItemsReply);
+
+    /**
+     * [Public] Get items in storages
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc GetItemsInStorages(GetItemsInStoragesRequest) returns (GetItemsInStoragesReply);
+
+    /**
+     * [Public] Get user's loadout items
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc GetUserLoadout(GetUserLoadoutRequest) returns (GetUserLoadoutReply);
+
+    /**
+     * [Public] Create new item
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc CreateItem(CreateItemRequest) returns (CreateItemReply);
+
+    /**
+     * [Public] Create new items
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc CreateItems(CreateItemsRequest) returns (CreateItemsReply);
+
+    /**
+     * [Public] Increment item's count
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc AddItem(AddItemRequest) returns (AddItemReply);
+
+    /**
+     * [Public] Decrement item's count
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SubtractItem(SubtractItemRequest) returns (SubtractItemReply);
+
+    /**
+     * [Public] Decrement items count
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SubtractItems(SubtractItemsRequest) returns (SubtractItemsReply);
+
+    /**
+     * [Public] Remove item
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc RemoveItem(RemoveItemRequest) returns (RemoveItemReply);
+
+    /**
+     * [Public] Swap item with another item
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SwapItem(SwapItemRequest) returns (SwapItemReply);
+
+    /**
+     * [Public] Split item's stack
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SplitItem(SplitItemRequest) returns (SplitItemReply);
+
+    /**
+     * [Public] Move item to another storage
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc MoveItem(MoveItemRequest) returns (MoveItemReply);
+
+    /**
+     * [Public] Merge item with another item
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc MergeItem(MergeItemRequest) returns (MergeItemReply);
+
+    /**
+     * [Private] Create new instance of item
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc NewItems(NewItemsRequest) returns (NewItemsReply);
+
+    /**
+     * [Private] Create new instances of prefabs
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc NewPrefabs(NewPrefabsRequest) returns (NewPrefabsReply);
+
+    /**
+     * [Public] Save user's loadout
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc SaveUserLoadout(SaveUserLoadoutRequest) returns (SaveUserLoadoutReply);
+
+    /**
+     * [Private] Exchange a list of items on another list of items
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc ExchangeItems(ExchangeItemsRequest) returns (ExchangeItemsReply);
+
+    /**
+     * [Public] Update item's data
+     * Errors: WRONG_REQUEST_FORMAT
+     */
+    rpc UpdateItem(UpdateItemRequest) returns(UpdateItemReply);
+
+    /**
+    * [TMP][Private] Get users items by criteria
+    * Errors: WRONG_REQUEST_FORMAT
+    */
+    rpc GetUsersItems(GetUsersItemsRequest) returns(GetUsersItemsReply);
+
+    /**
+     * [Private] Transfer items from one user to another
+     * Errors: WRONG_REQUEST_FORMAT, ITEM_NOT_FOUND, NOT_ENOUGH_SPACE
+     */
+    rpc TransferItem(TransferItemsRequest) returns(TransferItemsReply);
+}
+
+// @exclude InitUserInventory
+message InitUserInventoryRequest
+{
+    // User id
+    string user_id = 1;
+}
+message InitUserInventoryReply {}
+
+// @exclude GetItem
+message GetItemRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Owner id
+    string user_id = 2;
+    // Item id
+    string item_id = 3;
+}
+message GetItemReply
+{
+    // Item
+    ItemDto item = 1;
+}
+
+// @exclude GetItemsByIds
+message GetItemsByIdsRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Owner id
+    string user_id = 2;
+    // Item ids
+    repeated string ids = 3;
+}
+message GetItemsByIdsReply
+{
+    // Key - item id, value - item
+    map<string, ItemDto> items = 1;
+}
+
+// @exclude ListItems
+message ListItemsRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // Page information
+    cube.online.common.PaginationParametersDto page = 2;
+    // User id
+    string user_id = 3;
+    // Filter: only specified item types
+    repeated string item_types = 4;
+}
+message ListItemsReply
+{
+    // Page information
+    cube.online.common.PageInfo page_info = 1;
+    // Items
+    repeated ItemDto items = 2;
+}
+
+// @exclude GetItemsInStorages
+message GetItemsInStoragesRequest
+{
+    // Fields that should be included in reply
+    google.protobuf.FieldMask mask = 1;
+    // User id
+    string user_id = 2;
+    // Item storage ids
+    repeated string storage_ids = 3;
+}
+message GetItemsInStoragesReply
+{
+    // Items in storages, key -> storage id, value -> items
+    map<string, ItemListDto> storage_items = 1;
+}
+
+// @exclude GetUserLoadout
+message GetUserLoadoutRequest
+{
+    // User id
+    string user_id = 1;
+}
+message GetUserLoadoutReply
+{
+    // Items
+    repeated ItemDto items = 2;
+}
+
+// @exclude CreateItem
+message CreateItemRequest
+{
+    // Item to create
+    ItemDto item = 1;
+}
+message CreateItemReply {}
+
+// @exclude CreateItems
+message CreateItemsRequest
+{
+    // Items to create
+    repeated ItemDto items = 1;
+}
+message CreateItemsReply {}
+
+// @exclude AddItem
+message AddItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item for adding
+    ItemCountDto item = 2;
+}
+message AddItemReply {}
+
+// @exclude SubtractItem
+message SubtractItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item for subtracting
+    ItemCountDto item = 2;
+}
+message SubtractItemReply {}
+
+// @exclude SubtractItems
+message SubtractItemsRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Items for subtracting
+    repeated ItemCountDto items = 2;
+}
+message SubtractItemsReply {}
+
+// @exclude RemoveItem
+message RemoveItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item id
+    string item_id = 2;
+}
+message RemoveItemReply {}
+
+// @exclude SwapItem
+message SwapItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item id of swapping item
+    string item_id = 2;
+    // Item id of target item
+    string target_item_id = 3;
+}
+message SwapItemReply {}
+
+// @exclude SplitItem
+message SplitItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item id of splitting item
+    string item_id = 2;
+    // Target storage for split item
+    ItemStorageDto target_storage = 3;
+    // Count of items to split
+    int32 count = 4;
+    // New item id
+    string new_item_id = 5;
+}
+message SplitItemReply {}
+
+// @exclude MoveItem
+message MoveItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item id
+    string item_id = 2;
+    // Target storage
+    ItemStorageDto target_storage = 3;
+}
+message MoveItemReply
+{
+    // Item that was moved with updated storage
+    ItemDto item = 1;
+}
+
+// @exclude MergeItem
+message MergeItemRequest
+{
+    // Owner user id
+    string user_id = 1;
+    // Item id
+    string item_id = 2;
+    // Item id of item to merge with
+    string target_item_id = 3;
+}
+message MergeItemReply {}
+
+// @exclude NewItems
+message NewItemsRequest
+{
+    // Item owner id
+    string user_id = 1;
+    // Items to create
+    repeated ItemDto items = 2;
+
+    message ItemDto
+    {
+        // Item template id
+        string item_template_id = 1;
+        // Item level
+        int32 level = 2;
+        // Count of items
+        int32 count = 3;
+        // Item attributes
+        repeated ItemAttributeDto attributes = 4;
+        // Either storage or storage_item_type should be set
+        ItemStorageDto storage = 5;
+        // Additional metadata
+        map<string, string> metadata = 6;
+        // Items that were used as a source for this item
+        repeated SourceItemDto source_items = 7;
+        // Additional gameplay effects
+        repeated string gameplay_effects = 8;
+    }
+
+    message ItemStorageDto
+    {
+        // Storage item type that will be used to store item. Either storage_id or storage_item_type should be set
+        optional string storage_item_type = 1;
+        // Storage item id
+        optional string storage_id = 2;
+        // Storage type
+        StorageTypeDto storage_type = 3;
+        // Index in storage
+        optional int32 position = 4;
+    }
+}
+message NewItemsReply
+{
+    // Created items
+    repeated ItemDto items = 1;
+}
+
+message NewPrefabsRequest
+{
+    // Item owner id
+    string user_id = 1;
+    // Prefabs to create
+    repeated PrefabDto prefabs = 2;
+
+    message PrefabDto
+    {
+        // Prefab id
+        string prefab_id = 1;
+        // Count of items
+        int32 count = 2;
+        // Either storage or storage_item_type should be set
+        PrefabStorageDto storage = 3;
+    }
+
+    message PrefabStorageDto
+    {
+        // Storage item type that will be used to store item. Either storage_id or storage_item_type should be set
+        optional string storage_item_type = 1;
+        // Storage item id
+        optional string storage_id = 2;
+        // Storage type
+        StorageTypeDto storage_type = 3;
+        // Index in storage
+        optional int32 position = 4;
+    }
+}
+message NewPrefabsReply
+{
+    // Created items
+    repeated ItemDto items = 1;
+}
+
+// @exclude SaveLUserLoadout
+message SaveUserLoadoutRequest
+{
+    // User id
+    string user_id = 1;
+    // Loadout items
+    repeated ItemDto items = 2;
+}
+message SaveUserLoadoutReply {}
+
+// @exclude ExchangeItems
+message ExchangeItemsRequest
+{
+    // User id
+    string user_id = 1;
+    // What items to exchange
+    repeated ExchangeRuleDto rules = 2;
+    // Storage item type that will be used to store item. If empty - user's storage will be used.
+    string target_storage_item_type = 3;
+    // Source storage item type that will be used to find source items. If empty - both backpack and user's storage will be used
+    string source_storage_item_type = 4;
+
+    message ExchangeRuleDto
+    {
+        repeated SourceItemDto source_items = 1;
+        repeated TargetItemDto target_items = 2;
+    }
+
+    message SourceItemDto
+    {
+        // Item id to exchange
+        string item_id = 1;
+        // Item template to exchange
+        string item_template_id = 2;
+        // Count of items
+        int32 count = 3;
+    }
+
+    message TargetItemDto
+    {
+        // Item template id to exchange for
+        string item_template_id = 1;
+        // Prefab id to exchange for
+        string prefab_id = 2;
+        // Count of items
+        int32 count = 3;
+        // Item level
+        int32 level = 4;
+    }
+}
+message ExchangeItemsReply
+{
+    // Items that were created as a result of exchange
+    repeated ItemDto created_items = 1;
+    // Items that were updated as a result of exchange
+    repeated ItemDto updated_items = 2;
+    // Items that were removed as a result of exchange
+    repeated ItemDto removed_items = 3;
+}
+
+// @exclude UpdateItem
+message UpdateItemRequest
+{
+    // Item data
+    ItemDto item = 1;
+}
+message UpdateItemReply {}
+
+// @exclude TransferItem
+message TransferItemsRequest
+{
+    // List of items to transfer with their counts
+    repeated TransferRuleDto rules = 1;
+
+    message TransferRuleDto
+    {
+        string source_user_id = 1;
+        string target_user_id = 2;
+        string source_storage_template_id = 3;
+        string target_storage_template_id = 4;
+        repeated SourceItemDto source_items = 5;
+        
+    }
+
+    message SourceItemDto
+    {
+        // Item id to exchange
+        string item_id = 1;
+        // Item template to exchange
+        string item_template_id = 2;
+        // Count of items
+        int32 count = 3;
+    }
+}
+message TransferItemsReply
+{
+}
+
+// @exclude GetUsersItems
+message GetUsersItemsRequest
+{
+    // User ids
+    repeated string user_ids = 1;
+    // Item template ids
+    repeated string item_template_ids = 2;
+}
+message GetUsersItemsReply
+{
+    // Key - user_id, Value - item
+    map<string, ItemListDto> user_items = 1;
+}
